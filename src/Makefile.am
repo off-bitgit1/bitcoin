@@ -237,6 +237,8 @@ BITCOIN_CORE_H = \
   node/psbt.h \
   node/timeoffsets.h \
   node/transaction.h \
+  node/txdownloadman.h \
+  node/txdownloadman_impl.h \
   node/txreconciliation.h \
   node/types.h \
   node/utxo_snapshot.h \
@@ -441,6 +443,7 @@ libbitcoin_node_a_SOURCES = \
   node/psbt.cpp \
   node/timeoffsets.cpp \
   node/transaction.cpp \
+  node/txdownloadman_impl.cpp \
   node/txreconciliation.cpp \
   node/utxo_snapshot.cpp \
   node/warnings.cpp \
