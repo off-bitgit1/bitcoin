@@ -313,6 +313,7 @@ if(BUILD_DAEMON)
   target_link_libraries(bitcoind
     core_interface
     bitcoin_node
+    secp256k1
     $<TARGET_NAME_IF_EXISTS:bitcoin_wallet>
   )
   list(APPEND installable_targets bitcoind)
@@ -326,6 +327,7 @@ if(WITH_MULTIPROCESS)
     core_interface
     bitcoin_node
     bitcoin_ipc
+    secp256k1
     $<TARGET_NAME_IF_EXISTS:bitcoin_wallet>
   )
   list(APPEND installable_targets bitcoin-node)

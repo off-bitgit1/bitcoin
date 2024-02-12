@@ -132,6 +132,7 @@ target_link_libraries(bitcoinqt
     core_interface
     bitcoin_cli
     leveldb
+    secp256k1
     Boost::headers
     $<TARGET_NAME_IF_EXISTS:MiniUPnPc::MiniUPnPc>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::libqrencode>
@@ -206,7 +207,6 @@ if(ENABLE_WALLET)
   target_link_libraries(bitcoinqt
     PRIVATE
       bitcoin_wallet
-      secp256k1
       Qt5::Network
   )
 endif()
@@ -234,6 +234,7 @@ target_link_libraries(bitcoin-qt
   core_interface
   bitcoinqt
   bitcoin_node
+  secp256k1
 )
 
 import_plugins(bitcoin-qt)
@@ -252,6 +253,7 @@ if(WITH_MULTIPROCESS)
     bitcoinqt
     bitcoin_node
     bitcoin_ipc
+    secp256k1
   )
   import_plugins(bitcoin-gui)
   list(APPEND installable_targets bitcoin-gui)
