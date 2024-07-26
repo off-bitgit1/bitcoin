@@ -157,7 +157,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
     mtx_child.vin.emplace_back(ptx_parent_2->GetHash(), 0);
     mtx_child.vout.emplace_back(CENT, CScript());
     auto ptx_child = MakeTransactionRef(mtx_child);
-    const std::vector<uint256> vec_parent_txids = {ptx_parent_1->GetHash(), ptx_parent_2->GetHash()};
+    const std::vector<Txid> vec_parent_txids = {ptx_parent_1->GetHash(), ptx_parent_2->GetHash()};
 
     // 1 reconsiderable parent
     {
