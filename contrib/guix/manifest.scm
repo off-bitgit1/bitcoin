@@ -471,6 +471,7 @@ inspecting signatures in Mach-O binaries.")
             (list "--enable-stack-protector=all",
                   "--enable-bind-now",
                   "--enable-static-pie",
+                  "--enable-static-nss",
                   "--disable-werror",
                   building-on))))))))
 
