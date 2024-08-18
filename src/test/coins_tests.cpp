@@ -51,11 +51,7 @@ public:
             return false;
         }
         coin = it->second;
-        if (coin.IsSpent() && m_rng.randbool() == 0) {
-            // Randomly return false in case of an empty entry.
-            return false;
-        }
-        return true;
+        return !coin.IsSpent();
     }
 
     uint256 GetBestBlock() const override { return hashBestBlock_; }
