@@ -49,10 +49,8 @@ CCoinsMap::iterator CCoinsViewCache::FetchCoin(const COutPoint &outpoint) const 
             cacheCoins.erase(ret);
             return cacheCoins.end();
         }
-        if (ret->second.coin.IsSpent()) {
-            // The parent only has an empty entry for this outpoint; we can consider our version as fresh.
-            ret->second.AddFlags(CCoinsCacheEntry::FRESH, *ret, m_sentinel);
-        }
+        // GetCoin will never return true if the coin is spent
+        Assume(!ret->second.coin.IsSpent());
         cachedCoinsUsage += ret->second.coin.DynamicMemoryUsage();
     }
     return ret;
