@@ -5,6 +5,7 @@
 """Class for bitcoind node under test"""
 
 import contextlib
+from collections import Counter
 import decimal
 import errno
 from enum import Enum
@@ -265,6 +266,8 @@ class TestNode():
         """Sets up an RPC connection to the bitcoind process. Returns False if unable to connect."""
         # Poll at a rate of four times per second
         poll_per_s = 4
+        ignored_errors = Counter()
+        latest_error = ""
         for _ in range(poll_per_s * self.rpc_timeout):
             if self.process.poll() is not None:
                 # Attach abrupt shutdown error/s to the exception message
@@ -313,25 +316,35 @@ class TestNode():
                 return
             except JSONRPCException as e:  # Initialization phase
                 # -28 RPC in warmup
+                if e.error['code'] == -28:
+                    ignored_errors["JSONRPCException -28"] += 1
                 # -342 Service unavailable, RPC server started but is shutting down due to error
-                if e.error['code'] != -28 and e.error['code'] != -342:
+                # - Ignore the exception to properly raise the FailedToStartError.
+                elif e.error['code'] == -342:
+                    ignored_errors["JSONRPCException -342"] += 1
+                else:
                     raise  # unknown JSON RPC exception
+                latest_error = repr(e)
             except OSError as e:
                 if e.errno == errno.ECONNRESET:
                     # This might happen when the RPC server is in warmup, but shut down before the call to getblockcount
                     # succeeds. Try again to properly raise the FailedToStartError
-                    pass
+                    ignored_errors["OSError.ECONNRESET"] += 1
                 elif e.errno == errno.ETIMEDOUT:
-                    pass # Treat identical to ECONNRESET
+                    ignored_errors["OSError.ETIMEDOUT"] += 1 # Treat identical to ECONNRESET
                 elif e.errno == errno.ECONNREFUSED:
-                    pass  # Port not yet open?
+                    ignored_errors["OSError.ECONNREFUSED"] += 1 # Port not yet open?
                 else:
                     raise  # unknown OS error
+                latest_error = repr(e)
             except ValueError as e:  # cookie file not found and no rpcuser or rpcpassword; bitcoind is still starting
-                if "No RPC credentials" not in str(e):
+                if "No RPC credentials" in str(e):
+                    ignored_errors["missing_credentials"] += 1
+                else:
                     raise
+                latest_error = repr(e)
             time.sleep(1.0 / poll_per_s)
-        self._raise_assertion_error("Unable to connect to bitcoind after {}s".format(self.rpc_timeout))
+        self._raise_assertion_error("Unable to connect to bitcoind after {}s (ignored errors: {}, latest error: {})".format(self.rpc_timeout, str(dict(ignored_errors)), latest_error))
 
     def wait_for_cookie_credentials(self):
         """Ensures auth cookie credentials can be read, e.g. for testing CLI with -rpcwait before RPC connection is up."""
