@@ -179,13 +179,13 @@ public:
 
     //! Only call Next when this entry is DIRTY
     inline CoinsCachePair* Next() const noexcept {
-        Assume(m_flags);
+        Assume(IsDirty());
         return m_next;
     }
 
     //! Only call Prev when this entry is DIRTY
     inline CoinsCachePair* Prev() const noexcept {
-        Assume(m_flags);
+        Assume(IsDirty());
         return m_prev;
     }
 
