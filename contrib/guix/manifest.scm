@@ -451,7 +451,7 @@ inspecting signatures in Mach-O binaries.")
 (define-public glibc-2.33
   (let ((commit "5f08d1df2c07904c1dc98bdf2b363c65874266f7"))
   (package
-    (inherit glibc) ;; 2.35
+    (inherit glibc) ;; 2.39
     (version "2.33")
     (source (origin
               (method git-fetch)
