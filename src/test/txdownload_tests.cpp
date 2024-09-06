@@ -117,10 +117,10 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
                 // No distinction between txid and wtxid caching for nonsegwit transactions, so only test these specific
                 // behaviors for segwit transactions.
                 Behaviors actual_behavior{
-                    /*txid_rejects=*/txdownload_impl.RecentRejectsFilter().contains(parent_txid),
-                    /*wtxid_rejects=*/txdownload_impl.RecentRejectsFilter().contains(parent_wtxid),
-                    /*txid_recon=*/txdownload_impl.RecentRejectsReconsiderableFilter().contains(parent_txid),
-                    /*wtxid_recon=*/txdownload_impl.RecentRejectsReconsiderableFilter().contains(parent_wtxid),
+                    /*txid_rejects=*/WITH_LOCK(txdownload_impl.m_txdownload_mutex, return txdownload_impl.RecentRejectsFilter().contains(parent_txid)),
+                    /*wtxid_rejects=*/WITH_LOCK(txdownload_impl.m_txdownload_mutex, return txdownload_impl.RecentRejectsFilter().contains(parent_wtxid)),
+                    /*txid_recon=*/WITH_LOCK(txdownload_impl.m_txdownload_mutex, return txdownload_impl.RecentRejectsReconsiderableFilter().contains(parent_txid)),
+                    /*wtxid_recon=*/WITH_LOCK(txdownload_impl.m_txdownload_mutex, return txdownload_impl.RecentRejectsReconsiderableFilter().contains(parent_wtxid)),
                     /*keep=*/keep,
                     /*txid_inv=*/txdownload_impl.AddTxAnnouncement(nodeid, GenTxid::Txid(parent_txid), now, /*p2p_inv=*/true),
                     /*wtxid_inv=*/txdownload_impl.AddTxAnnouncement(nodeid, GenTxid::Wtxid(parent_wtxid), now, /*p2p_inv=*/true),
@@ -134,6 +134,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
 
                 // If parent (by txid) was rejected, child is too.
                 const bool parent_txid_rejected{segwit_parent ? expected_behavior.m_txid_in_rejects : expected_behavior.m_wtxid_in_rejects};
+                LOCK(txdownload_impl.m_txdownload_mutex);
                 BOOST_CHECK_EQUAL(parent_txid_rejected, txdownload_impl.RecentRejectsFilter().contains(child_txid));
                 BOOST_CHECK_EQUAL(parent_txid_rejected, txdownload_impl.RecentRejectsFilter().contains(child_wtxid));
 
@@ -175,6 +176,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
         BOOST_CHECK(c_keep);
         BOOST_CHECK(c_unique_txids == vec_parent_txids);
         BOOST_CHECK(!c_package.has_value());
+        LOCK(txdownload_impl.m_txdownload_mutex);
         BOOST_CHECK(txdownload_impl.m_orphanage.HaveTx(ptx_child->GetWitnessHash()));
     }
 
@@ -199,6 +201,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
         BOOST_CHECK(c_keep);
         BOOST_CHECK(c_unique_txids == vec_parent_txids);
         BOOST_CHECK(!c_package.has_value());
+        LOCK(txdownload_impl.m_txdownload_mutex);
         BOOST_CHECK(!txdownload_impl.m_orphanage.HaveTx(ptx_child->GetWitnessHash()));
     }
 
@@ -226,6 +229,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
         BOOST_CHECK(c_keep);
         BOOST_CHECK(c_unique_txids == vec_parent_txids);
         BOOST_CHECK(!c_package.has_value());
+        LOCK(txdownload_impl.m_txdownload_mutex);
         BOOST_CHECK(!txdownload_impl.m_orphanage.HaveTx(ptx_child->GetWitnessHash()));
 
     }
@@ -240,7 +244,7 @@ BOOST_FIXTURE_TEST_CASE(tx_rejection_types, TestChain100Setup)
         BOOST_CHECK(c_keep);
         BOOST_CHECK(c_unique_txids == vec_parent_txids);
         BOOST_CHECK(!c_package.has_value());
-        BOOST_CHECK(txdownload_impl.m_orphanage.HaveTx(ptx_child->GetWitnessHash()));
+        BOOST_CHECK(WITH_LOCK(txdownload_impl.m_txdownload_mutex, return txdownload_impl.m_orphanage.HaveTx(ptx_child->GetWitnessHash())));
 
         // Parent reconsiderable failure again
         const auto& [p_keep, p_unique_txids, p_package] = txdownload_impl.MempoolRejectedTx(ptx_parent_1, state_reconsiderable, nodeid, /*first_time_failure=*/true);
