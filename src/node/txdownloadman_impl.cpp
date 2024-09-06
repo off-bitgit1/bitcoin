@@ -125,6 +125,11 @@ void TxDownloadManagerImpl::BlockDisconnected()
 
 bool TxDownloadManagerImpl::AlreadyHaveTx(const GenTxid& gtxid, bool include_reconsiderable)
 {
+    return AlreadyHaveTxInternal(gtxid, include_reconsiderable);
+}
+
+bool TxDownloadManagerImpl::AlreadyHaveTxInternal(const GenTxid& gtxid, bool include_reconsiderable)
+{
     const uint256& hash = gtxid.GetHash();
 
     if (gtxid.IsWtxid()) {
@@ -190,7 +195,7 @@ bool TxDownloadManagerImpl::AddTxAnnouncement(NodeId peer, const GenTxid& gtxid,
         return true;
     }
 
-    const bool already_had{AlreadyHaveTx(gtxid, /*include_reconsiderable=*/true)};
+    const bool already_had{AlreadyHaveTxInternal(gtxid, /*include_reconsiderable=*/true)};
 
     // If this is an inv received from a peer and we already have it, we can drop it.
     // If this is a request for the parent of an orphan, we don't drop transactions that we already have. In particular,
@@ -306,7 +311,7 @@ std::vector<GenTxid> TxDownloadManagerImpl::GetRequestsToSend(NodeId nodeid, std
             entry.second.GetHash().ToString(), entry.first);
     }
     for (const GenTxid& gtxid : requestable) {
-        if (!AlreadyHaveTx(gtxid, /*include_reconsiderable=*/false)) {
+        if (!AlreadyHaveTxInternal(gtxid, /*include_reconsiderable=*/false)) {
             LogDebug(BCLog::NET, "Requesting %s %s peer=%d\n", gtxid.IsWtxid() ? "wtx" : "tx",
                 gtxid.GetHash().ToString(), nodeid);
             requests.emplace_back(gtxid);
@@ -419,7 +424,7 @@ node::RejectedTxTodo TxDownloadManagerImpl::MempoolRejectedTx(const CTransaction
             // Exclude m_lazy_recent_rejects_reconsiderable: the missing parent may have been
             // previously rejected for being too low feerate. This orphan might CPFP it.
             std::erase_if(unique_parents, [&](const auto& txid){
-                return AlreadyHaveTx(GenTxid::Txid(txid), /*include_reconsiderable=*/false);
+                return AlreadyHaveTxInternal(GenTxid::Txid(txid), /*include_reconsiderable=*/false);
             });
             const auto now{GetTime<std::chrono::microseconds>()};
             const auto& wtxid = ptx->GetWitnessHash();
@@ -563,7 +568,7 @@ std::pair<bool, std::optional<PackageToValidate>> TxDownloadManagerImpl::Receive
     // already; and an adversary can already relay us old transactions
     // (older than our recency filter) if trying to DoS us, without any need
     // for witness malleation.
-    if (AlreadyHaveTx(GenTxid::Wtxid(wtxid), /*include_reconsiderable=*/true)) {
+    if (AlreadyHaveTxInternal(GenTxid::Wtxid(wtxid), /*include_reconsiderable=*/true)) {
 
         if (RecentRejectsReconsiderableFilter().contains(wtxid)) {
             // When a transaction is already in m_lazy_recent_rejects_reconsiderable, we shouldn't submit

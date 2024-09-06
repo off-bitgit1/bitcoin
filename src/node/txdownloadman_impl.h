@@ -198,6 +198,8 @@ protected:
      * */
     std::optional<std::chrono::seconds> OrphanResolutionCandidate(NodeId nodeid, const Wtxid& orphan_wtxid);
 
+    /** Internal version of AlreadyHaveTx */
+    bool AlreadyHaveTxInternal(const GenTxid& gtxid, bool include_reconsiderable);
 };
 } // namespace node
 #endif // BITCOIN_NODE_TXDOWNLOADMAN_IMPL_H
