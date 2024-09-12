@@ -77,6 +77,7 @@ from test_framework.messages import (
     sha256,
 )
 from test_framework.util import (
+    ensure_for_helper_internal,
     MAX_NODES,
     p2p_port,
     wait_until_helper_internal,
@@ -586,6 +587,9 @@ class P2PInterface(P2PConnection):
             return test_function_in()
 
         wait_until_helper_internal(test_function, timeout=timeout, lock=p2p_lock, timeout_factor=self.timeout_factor)
+
+    def ensure_for(self, *, duration, f, **kwargs):
+        return ensure_for_helper_internal(duration=duration, predicate=f, **kwargs)
 
     def wait_for_connect(self, *, timeout=60):
         test_function = lambda: self.is_connected
