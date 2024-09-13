@@ -617,7 +617,9 @@ void GetCoinsMapEntry(const CCoinsMap& map, CAmount& value, char& flags, const C
         } else {
             value = it->second.coin.out.nValue;
         }
-        flags = it->second.GetFlags();
+        flags = 0;
+        if (it->second.IsDirty()) flags |= DIRTY;
+        if (it->second.IsFresh()) flags |= FRESH;
         assert(flags != NO_ENTRY);
     }
 }
