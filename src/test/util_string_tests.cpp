@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_SUITE(util_string_tests)
 // Helper to allow compile-time sanity checks while providing the number of
 // args directly. Normally PassFmt<sizeof...(Args)> would be used.
 template <unsigned NumArgs>
-inline void PassFmt(util::ConstevalFormatString<NumArgs> fmt)
+inline void PassFmt(ConstevalFormatString<NumArgs> fmt)
 {
     // This was already executed at compile-time, but is executed again at run-time to avoid -Wunused.
     decltype(fmt)::Detail_CheckNumFormatSpecifiers(fmt.fmt);
@@ -23,7 +23,7 @@ inline void FailFmtWithError(std::string_view wrong_fmt, std::string_view error)
 {
     using ErrType = const char*;
     auto check_throw{[error](const ErrType& str) { return str == error; }};
-    BOOST_CHECK_EXCEPTION(util::ConstevalFormatString<WrongNumArgs>::Detail_CheckNumFormatSpecifiers(wrong_fmt), ErrType, check_throw);
+    BOOST_CHECK_EXCEPTION(ConstevalFormatString<WrongNumArgs>::Detail_CheckNumFormatSpecifiers(wrong_fmt), ErrType, check_throw);
 }
 
 BOOST_AUTO_TEST_CASE(ConstevalFormatString_NumSpec)
