@@ -10,20 +10,42 @@ using namespace util;
 
 BOOST_AUTO_TEST_SUITE(util_string_tests)
 
+template <typename... Tt>
+void TfmF(const char* fmt, const std::tuple<Tt...>& t)
+{
+    std::apply([fmt](const Tt&... ta){
+        tfm::format(fmt, ta...);
+    }, t);
+}
+
 // Helper to allow compile-time sanity checks while providing the number of
 // args directly. Normally PassFmt<sizeof...(Args)> would be used.
 template <unsigned NumArgs>
-inline void PassFmt(util::ConstevalFormatString<NumArgs> fmt)
+inline void PassFmt(ConstevalFormatString<NumArgs> fmt)
 {
-    // This was already executed at compile-time, but is executed again at run-time to avoid -Wunused.
+    // Exercise happy paths at run-time for code coverage metrics.
     decltype(fmt)::Detail_CheckNumFormatSpecifiers(fmt.fmt);
+
+    // Prove parity with tinyformat
+    TfmF(fmt.fmt, std::tuple_cat(std::array<int, NumArgs>{}));
+    if constexpr (NumArgs > 0) {
+        BOOST_CHECK_THROW(TfmF(fmt.fmt, std::tuple_cat(std::array<int, NumArgs - 1>{})), tfm::format_error);
+    }
+}
+template <unsigned WrongNumArgs, unsigned CorrectArgs>
+inline void PassFmtIncorrect(ConstevalFormatString<WrongNumArgs> fmt)
+{
+    // Disprove parity with tinyformat
+    static_assert(WrongNumArgs != CorrectArgs);
+    TfmF(fmt.fmt, std::tuple_cat(std::array<int, CorrectArgs>{}));
+    BOOST_CHECK_THROW(TfmF(fmt.fmt, std::tuple_cat(std::array<int, WrongNumArgs>{})), tfm::format_error);
 }
 template <unsigned WrongNumArgs>
 inline void FailFmtWithError(std::string_view wrong_fmt, std::string_view error)
 {
     using ErrType = const char*;
     auto check_throw{[error](const ErrType& str) { return str == error; }};
-    BOOST_CHECK_EXCEPTION(util::ConstevalFormatString<WrongNumArgs>::Detail_CheckNumFormatSpecifiers(wrong_fmt), ErrType, check_throw);
+    BOOST_CHECK_EXCEPTION(ConstevalFormatString<WrongNumArgs>::Detail_CheckNumFormatSpecifiers(wrong_fmt), ErrType, check_throw);
 }
 
 BOOST_AUTO_TEST_CASE(ConstevalFormatString_NumSpec)
@@ -58,9 +80,9 @@ BOOST_AUTO_TEST_CASE(ConstevalFormatString_NumSpec)
     // The `*` specifier behavior is unsupported and can lead to runtime
     // errors when used in a ConstevalFormatString. Please refer to the
     // note in the ConstevalFormatString docs.
-    PassFmt<1>("%*c");
-    PassFmt<2>("%2$*3$d");
-    PassFmt<1>("%.*f");
+    PassFmtIncorrect<1, 2>("%*c");
+    PassFmtIncorrect<2, 3>("%2$*3$d");
+    PassFmtIncorrect<1, 2>("%.*f");
 
     auto err_mix{"Format specifiers must be all positional or all non-positional!"};
     FailFmtWithError<1>("%s%1$s", err_mix);
