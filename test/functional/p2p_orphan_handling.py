@@ -397,6 +397,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
 
         # Relay the parent. It should be rejected because it pays 0 fees.
         self.relay_transaction(peer1, parent_low_fee_nonsegwit["tx"])
+        assert parent_low_fee_nonsegwit["txid"] not in node.getrawmempool()
 
         # Relay the child. It should be rejected for having missing parents, and this rejection is
         # cached by txid and wtxid.
@@ -436,6 +437,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
 
         # 1. Fake orphan is received first. It is missing an input.
         bad_peer.send_and_ping(msg_tx(tx_orphan_bad_wit))
+        assert tx_in_orphanage(node, tx_orphan_bad_wit)
 
         # 2. Node requests the missing parent by txid.
         parent_txid_int = int(tx_parent["txid"], 16)
@@ -486,6 +488,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
 
         # 1. Fake orphan is received first. It is missing an input.
         bad_peer.send_and_ping(msg_tx(tx_orphan_bad_wit))
+        assert tx_in_orphanage(node, tx_orphan_bad_wit)
 
         # 2. Node requests missing tx_grandparent by txid.
         grandparent_txid_int = int(tx_grandparent["txid"], 16)
@@ -517,6 +520,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
         assert tx_middle["txid"] in node_mempool
         assert tx_grandchild["txid"] in node_mempool
         assert_equal(node.getmempoolentry(tx_middle["txid"])["wtxid"], tx_middle["wtxid"])
+        assert_equal(len(node.getorphantxs()), 0)
 
     @cleanup
     def test_orphan_txid_inv(self):
@@ -535,6 +539,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
 
         # 1. Fake orphan is received first. It is missing an input.
         bad_peer.send_and_ping(msg_tx(tx_orphan_bad_wit))
+        assert tx_in_orphanage(node, tx_orphan_bad_wit)
 
         # 2. Node requests the missing parent by txid.
         parent_txid_int = int(tx_parent["txid"], 16)
@@ -567,6 +572,7 @@ class OrphanHandlingTest(BitcoinTestFramework):
         assert tx_parent["txid"] in node_mempool
         assert tx_child["txid"] in node_mempool
         assert_equal(node.getmempoolentry(tx_child["txid"])["wtxid"], tx_child["wtxid"])
+        assert_equal(len(node.getorphantxs()), 0)
 
 
     def run_test(self):
