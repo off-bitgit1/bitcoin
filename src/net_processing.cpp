@@ -3791,6 +3791,12 @@ void PeerManagerImpl::ProcessMessage(CNode& pfrom, const std::string& msg_type, 
             return;
         }
 
+        const bool is_v1transport = pfrom.m_transport->GetInfo().transport_type == TransportProtocolType::V1;
+        if (pfrom.IsInboundConn() && is_v1transport && m_connman.DisableV1OnClearnet(pfrom.ConnectedThroughNetwork())){
+            pfrom.fDisconnect = true;
+            return;
+        }
+
         if (pfrom.IsInboundConn() && addrMe.IsRoutable())
         {
             SeenLocal(addrMe);

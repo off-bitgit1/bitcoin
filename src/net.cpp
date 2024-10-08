@@ -1893,7 +1893,7 @@ void CConnman::DisconnectNodes()
                 // Add to reconnection list if appropriate. We don't reconnect right here, because
                 // the creation of a connection is a blocking operation (up to several seconds),
                 // and we don't want to hold up the socket handler thread for that long.
-                if (pnode->m_transport->ShouldReconnectV1()) {
+                if (pnode->m_transport->ShouldReconnectV1() && !DisableV1OnClearnet(pnode->addr.GetNetClass())) {
                     reconnections_to_add.push_back({
                         .addr_connect = pnode->addr,
                         .grant = std::move(pnode->grantOutbound),
@@ -2435,6 +2435,11 @@ bool CConnman::MultipleManualOrFullOutboundConns(Network net) const
     return m_network_conn_counts[net] > 1;
 }
 
+bool CConnman::DisableV1OnClearnet(Network net) const
+{
+    return disable_v1conn_clearnet && (net == NET_IPV4 || net == NET_IPV6);
+}
+
 bool CConnman::MaybePickPreferredNetwork(std::optional<Network>& network)
 {
     std::array<Network, 5> nets{NET_IPV4, NET_IPV6, NET_ONION, NET_I2P, NET_CJDNS};
@@ -2762,6 +2767,11 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect, Spa
                 continue;
             }
 
+            bool use_v2transport(addr.nServices & GetLocalServices() & NODE_P2P_V2);
+            if (DisableV1OnClearnet(addr.GetNetClass()) && !use_v2transport) {
+                continue;
+            }
+
             // only consider very recently tried nodes after 30 failed attempts
             if (current_time - addr_last_try < 10min && nTries < 30) {
                 continue;
@@ -2943,6 +2953,25 @@ void CConnman::OpenNetworkConnection(const CAddress& addrConnect, bool fCountFai
         }
     } else if (FindNode(std::string(pszDest)))
         return;
+
+    enum Network netclass;
+    if (pszDest) {
+        std::string host;
+        uint16_t port;
+        SplitHostPort(std::string(pszDest), port, host);
+        if (LookupHost(host, false).has_value()) {
+            netclass = LookupHost(host, false).value().GetNetClass();
+        } else if (LookupHost(host, true).has_value()) {
+            netclass = LookupHost(host, true).value().GetNetClass();
+        } else {
+            netclass = NET_UNROUTABLE;
+        }
+    } else {
+        netclass = addrConnect.GetNetClass();
+    }
+    if (DisableV1OnClearnet(netclass) && !use_v2transport) {
+        return;
+    }
 
     CNode* pnode = ConnectNode(addrConnect, pszDest, fCountFailure, conn_type, use_v2transport);
 
