@@ -182,6 +182,7 @@ if(ENABLE_WALLET)
       bitcoin_wallet
       bitcoin_common
       bitcoin_util
+      secp256k1
       Boost::headers
     )
     list(APPEND installable_targets bitcoin-wallet)
@@ -291,6 +292,7 @@ target_link_libraries(bitcoin_node
     bitcoin_util
     leveldb
     minisketch
+    secp256k1
     univalue
     Boost::headers
     $<TARGET_NAME_IF_EXISTS:libevent::libevent>
@@ -379,6 +381,7 @@ if(BUILD_TX)
     core_interface
     bitcoin_common
     bitcoin_util
+    secp256k1
     univalue
   )
   list(APPEND installable_targets bitcoin-tx)

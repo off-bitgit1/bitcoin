@@ -206,6 +206,7 @@ if(ENABLE_WALLET)
   target_link_libraries(bitcoinqt
     PRIVATE
       bitcoin_wallet
+      secp256k1
       Qt5::Network
   )
 endif()
