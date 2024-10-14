@@ -1395,6 +1395,7 @@ util::Result<std::pair<std::vector<FeeFrac>, std::vector<FeeFrac>>> CTxMemPool::
 
 CTxMemPool::CTxMemPoolChangeSet::TxHandle CTxMemPool::CTxMemPoolChangeSet::AddTx(const CTransactionRef& tx, const CAmount fee, int64_t time, unsigned int entry_height, uint64_t entry_sequence, bool spends_coinbase, int64_t sigops_cost, LockPoints lp)
 {
+    Assume(m_stage_tx.find(tx->GetHash()) == m_stage_tx.end());
     auto newit = m_stage_tx.emplace(tx, fee, time, entry_height, entry_sequence, spends_coinbase, sigops_cost, lp).first;
     feerate += FeeFrac(fee, tx->GetTotalSize());
     m_entry_vec.push_back(newit);
